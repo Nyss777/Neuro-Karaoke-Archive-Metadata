@@ -9,8 +9,8 @@ This repository is a public interface for the metadata in the [Neuro Karaoke Arc
 * Please read our Style Guidelines before making a submission;
 * Our main source of metadata should be [MusicBrainz](https://musicbrainz.org) moving forwards with this project;
 * Make an issue or a pull request explaining the problem and the proposed solution;
-* Ideally, you should include the relevant MusicBrainz page in the submission.
-
+* Ideally, you should include the relevant MusicBrainz page in the submission;
+* You can also help by improving and expanding the README.
 
 
 
