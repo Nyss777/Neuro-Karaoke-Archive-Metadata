@@ -1,0 +1,30 @@
+name: Release Zipped HJSON
+
+on:
+  push:
+    branches:
+      - main # Triggers whenever code is merged or pushed to main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Zip HJSON files
+        run: |
+          # Find all .hjson files and zip them into configs.zip
+          zip -r metadata-zip.zip . -i "*.hjson"
+
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag: latest
+          name: Zipped Metadata
+          files: metadata-zip.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
