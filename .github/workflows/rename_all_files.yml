@@ -32,5 +32,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Auto-rename HJSON files" [skip ci] || echo "No changes"
+          git commit -m "Auto-rename HJSON files" || echo "No changes"
           git push
