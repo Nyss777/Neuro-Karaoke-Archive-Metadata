@@ -1,0 +1,35 @@
+# Ignore the Python virtual environment
+.venv/
+venv/
+env/
+
+# Ignore compiled Python files
+__pycache__/
+*.py[cod]
+.pytest_cache
+
+
+# Build files
+build/
+dist/
+*.spec
+
+# Ignore log files (like the sync [date].log you created earlier!)
+*.log
+
+# Ignore data zip
+*.zip
+
+# ignore path config
+*.txt
+
+# Ignore presets
+*.json
+
+# Ignore OS-specific system files
+.DS_Store
+Thumbs.db
+
+# Ignore sensitive environment variables
+.env
+
