@@ -10,6 +10,8 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "hjson>=3.1.0",
+    "mutagen>=1.47.0",
+    "tinytag>=2.2.0",
 ]
 
 [tool.hatch.build.targets.wheel]
