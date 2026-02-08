@@ -1,12 +1,14 @@
+import json
+import os
 from pathlib import Path
-from sys import argv
 from typing import cast
 
 import hjson
 from metadata_utils.CF_Program import Song, process_new_tags
 
-# Assuming Song and process_new_tags are defined in your environment or local utils
-# For now, I'll focus on the renaming logic you provided
+# Define the path where the Action writes the file
+# GitHub Actions usually puts it here relative to the repo root
+INPUT_JSON_PATH = ".github/outputs/all_changed_files.json"
 
 def get_metadata(hjson_path: str) -> (dict[str, str | int | float] | None):
     try:
@@ -18,12 +20,31 @@ def get_metadata(hjson_path: str) -> (dict[str, str | int | float] | None):
         return None
 
 def main():
-    # argv[0] is the script name, argv[1:] are the files passed from the shell
-    files = argv[1:]
+    # 1. Read from the file instead of ENV
+    if not os.path.exists(INPUT_JSON_PATH):
+        print(f"No changed files log found at {INPUT_JSON_PATH}")
+        return
+
+    c = ""
+    try:
+        with open(INPUT_JSON_PATH, 'r', encoding='utf-8') as f:
+            c = f.read()
+            f.seek(0)
+            files = json.load(f)
+
+    except Exception as e:
+        print(f"JSON File Parsing Error: {e}")
+        print(c)
+        return
+
+    print(f"Processing {len(files)} files...")
 
     for file_path in files:
         path = Path(file_path)
+        
+        # Security check: Ensure we only touch existing files
         if not path.exists():
+            print(f"Skipping missing file: {file_path}")
             continue
 
         metadata = get_metadata(file_path)
@@ -34,14 +55,24 @@ def main():
         new_song_data = {k: str(v) for k, v in metadata.items()}
 
         # --- Your Custom Logic ---
-        song_obj = Song(file_path)
-        process_new_tags(song_obj, new_song_data)
+        try:
+            song_obj = Song(file_path)
+            process_new_tags(song_obj, new_song_data)
+        except Exception as e:
+            print(f"Failed to process tags for {path.name}: {e}")
+            continue
         # -------------------------
 
         new_stem = Path(song_obj.filename).stem
         new_name = path.with_stem(new_stem)
         
+        # Skip if name is identical
         if path.name == new_name.name:
+            continue
+        
+        # Handle collision (if new filename already exists)
+        if new_name.exists():
+            print(f"Cannot rename: Target {new_name.name} already exists.")
             continue
 
         print(f"Renaming: [{path.name}] -> [{new_name.name}]")
