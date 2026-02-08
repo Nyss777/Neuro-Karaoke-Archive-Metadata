@@ -41,6 +41,9 @@ def main():
         new_stem = Path(song_obj.filename).stem
         new_name = path.with_stem(new_stem)
         
+        if path.name == new_name.name:
+            continue
+
         print(f"Renaming: {path.name} -> {new_name.name}")
         path.rename(new_name)
 
