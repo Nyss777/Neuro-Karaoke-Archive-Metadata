@@ -3,8 +3,8 @@ name: Auto-Rename HJSON Metadata
 on:
   # Trigger on pushes that modify HJSON files
   push:
-    paths:
-      - '**/*.hjson'
+    # paths:
+    #   - '**/*.hjson'
     # branches:
     #   - main
   # Allow manual trigger from the Actions tab
