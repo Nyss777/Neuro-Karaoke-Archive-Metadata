@@ -34,14 +34,17 @@ jobs:
       # 4. Run your Python script
       # We use 'find' to locate all HJSON files and pass them to the script via xargs.
       # PYTHONPATH=src ensures your 'metadata_utils' import works.
-      - name: Run Renaming Script
-        env:
-          PYTHONPATH: src
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: "**/*.hjson" # Only look for .hjson files
+
+      - name: Run Rename Script
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          # Find all .hjson files, print them with null terminator (safe for spaces),
-          # and pipe them into your script.
-          # Assumes your script is saved as 'rename_hjson.py' in the root.
-          find . -name "*.hjson" -print0 | xargs -0 uv run python src/scripts/renaming_script.py
+          # Pass the space-separated list of changed files to your script
+          uv run python .github/scripts/renaming_script.py ${{ steps.changed-files.outputs.all_changed_files }}
 
       # 5. Commit and Push changes if files were renamed
       - name: Commit and Push Changes
