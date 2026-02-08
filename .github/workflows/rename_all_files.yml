@@ -1,6 +1,16 @@
-name: Rename HJSON Files
-on: [push]
+name: Auto-Rename HJSON Metadata
 
+on:
+  # Trigger on pushes that modify HJSON files
+  push:
+    paths:
+      - '**/*.hjson'
+    # branches:
+    #   - main
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+# Grant permission to write changes back to the repo
 permissions:
   contents: write
 
@@ -8,29 +18,52 @@ jobs:
   rename-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history so git mv detection works better
 
+      # 1. Setup uv (Since you have uv.lock)
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
 
+      # 2. Setup Python using the version in your pyproject.toml
       - name: Set up Python
-        run: uv python install 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
 
-      - name: Set up uv
-        run: uv sync
+      # 3. Install dependencies from your lockfile
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
 
-      - name: Run Rename Script
+      # 4. Run your Python script
+      # We use 'find' to locate all HJSON files and pass them to the script via xargs.
+      # PYTHONPATH=src ensures your 'metadata_utils' import works.
+      - name: Run Renaming Script
+        env:
+          PYTHONPATH: src
         run: |
-          # uv run ensures 'src' is in the path so imports work
-          uv run python src/scripts/renaming_script.py $(find . -name "*.hjson")
+          # Find all .hjson files, print them with null terminator (safe for spaces),
+          # and pipe them into your script.
+          # Assumes your script is saved as 'rename_hjson.py' in the root.
+          find . -name "*.hjson" -print0 | xargs -0 uv run python rename_hjson.py
 
-      - name: Commit and Push changes
+      # 5. Commit and Push changes if files were renamed
+      - name: Commit and Push Changes
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Auto-rename HJSON files" || echo "No changes"
-          git push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage all changes (including renames)
+          git add -A
+          
+          # Check if there are actually changes to commit
+          if git diff --staged --quiet; then
+            echo "No file renames detected."
+          else
+            echo "Committing renames..."
+            # [skip ci] prevents this commit from triggering the workflow again (infinite loop protection)
+            git commit -m "Auto-rename HJSON files to match tags [skip ci]"
+            git push
+          fi
