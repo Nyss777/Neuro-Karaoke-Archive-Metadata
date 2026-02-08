@@ -31,7 +31,8 @@ Example: “Evil & Cerber”
 
     _minor_version_ : Indicates if that version of the song already exists in a given _major_version_; The first occurrence is omitted, so for new songs you would find only v3, after that it becomes v3.2.
     
-For Evil Neuro and duets they more simply use just the minor version, as there are no major versions attached to them.
+    For Evil Neuro and duets they more simply use just the minor version, as there are no major versions attached to them.
+  
 * Discnumber: Disc / Album number;
 * Track: Number that marks a song position inside its album, should follow release order whenever possible. For completed albums it should have the total track as well. Example:  33/205
 * Comment: Unspecified comment, can be used to add extra information such as a song being unreleased.
