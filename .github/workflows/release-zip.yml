@@ -1,14 +1,7 @@
 name: Release Zipped HJSON
 
 on:
-  push:
-    paths:
-      - '**/*.hjson'
-    branches:
-      - main # Triggers whenever code is merged or pushed to main
-
-permissions:
-  contents: write
+  workflow_call: # This makes it reusable  
 
 jobs:
   build-and-release:

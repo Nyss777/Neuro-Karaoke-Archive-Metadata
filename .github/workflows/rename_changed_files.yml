@@ -1,12 +1,8 @@
 name: Auto-Rename HJSON Metadata
 
 on:
-  # Allow manual trigger from the Actions tab
-  workflow_dispatch:
-
-# Grant permission to write changes back to the repo
-permissions:
-  contents: write
+  workflow_call: # This makes it reusable  
+  workflow_dispatch: # Allow manual trigger from the Actions tab
 
 jobs:
   rename-files:

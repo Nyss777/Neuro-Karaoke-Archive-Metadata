@@ -1,0 +1,19 @@
+name: HJSON Pipeline
+
+on:
+  push:
+    paths:
+      - '**/*.hjson'
+    # branches: [main]
+
+jobs:
+  call-rename:
+    uses: ./.github/workflows/rename_changed_files.yml
+    permissions:
+      contents: write
+
+  call-release:
+    needs: call-rename # Still keeps them sequential!
+    uses: ./.github/workflows/release-zip.yml
+    permissions:
+      contents: write

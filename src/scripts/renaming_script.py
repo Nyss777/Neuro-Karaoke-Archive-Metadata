@@ -44,7 +44,7 @@ def main():
         if path.name == new_name.name:
             continue
 
-        print(f"Renaming: {path.name} -> {new_name.name}")
+        print(f"Renaming: [{path.name}] -> [{new_name.name}]")
         path.rename(new_name)
 
 if __name__ == "__main__":
