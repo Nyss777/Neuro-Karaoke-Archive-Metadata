@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 from typing import cast
 
@@ -21,21 +22,23 @@ def get_metadata(hjson_path: str) -> (dict[str, str | int | float] | None):
 
 def main():
     # 1. Read from the file instead of ENV
-    if not os.path.exists(INPUT_JSON_PATH):
+    if os.path.exists(INPUT_JSON_PATH):
+
+        c = ""
+        try:
+            with open(INPUT_JSON_PATH, 'r', encoding='utf-8') as f:
+                c = f.read()
+                f.seek(0)
+                files = json.load(f)
+
+        except Exception as e:
+            print(f"JSON File Parsing Error: {e}")
+            print(c)
+            return
+
+    else:        
         print(f"No changed files log found at {INPUT_JSON_PATH}")
-        return
-
-    c = ""
-    try:
-        with open(INPUT_JSON_PATH, 'r', encoding='utf-8') as f:
-            c = f.read()
-            f.seek(0)
-            files = json.load(f)
-
-    except Exception as e:
-        print(f"JSON File Parsing Error: {e}")
-        print(c)
-        return
+        files = sys.argv[1:]
 
     print(f"Processing {len(files)} files...")
 

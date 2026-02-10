@@ -1,4 +1,4 @@
-name: Auto-Rename HJSON Metadata
+name: Rename All HJSON Files
 
 on:
   # Allow manual trigger from the Actions tab
@@ -40,7 +40,6 @@ jobs:
         run: |
           # Find all .hjson files, print them with null terminator (safe for spaces),
           # and pipe them into your script.
-          # Assumes your script is saved as 'rename_hjson.py' in the root.
           find . -name "*.hjson" -print0 | xargs -0 uv run python src/scripts/renaming_script.py
 
       # 5. Commit and Push changes if files were renamed

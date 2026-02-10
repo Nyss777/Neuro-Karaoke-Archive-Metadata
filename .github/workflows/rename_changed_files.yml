@@ -2,7 +2,6 @@ name: Auto-Rename HJSON Metadata
 
 on:
   workflow_call: # This makes it reusable  
-  workflow_dispatch: # Allow manual trigger from the Actions tab
 
 jobs:
   rename-files:
