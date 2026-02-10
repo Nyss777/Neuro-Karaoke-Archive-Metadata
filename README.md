@@ -43,7 +43,4 @@ Example: “Evil & Cerber”
 ## To-Do List:
 - [X] Make so that changes to the hjson reflect on the drive;
 - [X] Make a proper readme;
-- [ ] Add old suggestions as issues / pull requests;
 - [X] Make so that the hjson file are automatically renamed to match the new data;
-- [ ] Maybe add search for discrepancies?
-(i.e. changing "Supercell" to "supercell" checks if all other all instances of "Supercell" were changed as well)
