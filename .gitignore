@@ -33,3 +33,5 @@ Thumbs.db
 # Ignore sensitive environment variables
 .env
 
+# rclone leftover
+--fast-list
