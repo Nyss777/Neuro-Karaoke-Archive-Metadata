@@ -23,7 +23,7 @@ from mutagen.id3 import (
     Encoding,
     ID3NoHeaderError,
 )
-from tinytag import TinyTag
+from tinytag import TinyTag, UnsupportedFormatError
 
 from .embed_lyrics import (
     contains_cjk,
@@ -34,8 +34,12 @@ from .embed_lyrics import (
 
 logger = logging.getLogger(__name__)
 
-with open( Path(__file__).parent.parent.parent / "config.txt" ) as f:
-    ALBUMS_COVER_PATH = Path(f.read())
+try:
+    with open( Path(__file__).parent.parent.parent / "config.txt" ) as f:
+        ALBUMS_COVER_PATH = Path(f.read())
+except Exception:
+    logger.error("Failed to load album cover config")
+    ALBUMS_COVER_PATH = None
 
 ALBUM_COVERS = {
     "1": 'Disc 1 cover art by paccha.jpg',  
@@ -182,14 +186,14 @@ class Song:
             "xxHash"
             )
 
-    def __init__(self, path: Path | str):
+    def __init__(self, path: Path | str, allow_incompatible : bool = False):
         self.path = Path(path)
 
         if not self.path.exists() or self.path.is_dir():
             raise ValueError("The specified path is invalid!",
                             f"Invalid path: {self.path}")
 
-        if self.path.suffix != ".mp3":
+        if not allow_incompatible and self.path.suffix != ".mp3":
             raise ValueError("Incompatible format, only compatible with mp3s!",
                             f"Invalid path: {self.path}")
 
@@ -250,7 +254,11 @@ class Song:
 
         path = Path(self.path)
 
-        tags = TinyTag.get(path, tags=True, image=False)
+        try:
+            tags = TinyTag.get(path, tags=True, image=False)
+
+        except UnsupportedFormatError:
+            return ""
 
         texts = tags.other.get("comment") or []
         if tags.comment:
@@ -346,6 +354,9 @@ class Song:
             tags.save()
 
     def set_album_image(self):
+
+        if ALBUMS_COVER_PATH is None:
+            return
 
         cover_image = title_match if (title_match := ALBUM_COVERS.get(self.TitleOG)) else ALBUM_COVERS.get(self.Discnumber, "") 
 
