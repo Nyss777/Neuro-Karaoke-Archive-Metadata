@@ -12,10 +12,12 @@ dependencies = [
     "hjson>=3.1.0",
     "mutagen>=1.47.0",
     "tinytag>=2.2.0",
+    "xxhash>=3.7.0",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/metadata_utils", "src/scripts"]
+packages = ["lib/metadata_utils", "src/scripts"]
 
 [tool.hatch.build.targets.wheel.sources]
 "src" = ""
+"lib" = ""
