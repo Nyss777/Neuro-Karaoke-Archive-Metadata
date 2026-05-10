@@ -46,7 +46,7 @@ def main():
     for file_path in files:
 
         try:
-            song_obj = Song(file_path, allow_imcompatible=True)
+            song_obj = Song(file_path, allow_incompatible=True)
         except ValueError as e:
             print(e)
             continue
@@ -70,7 +70,7 @@ def main():
             continue
 
         print(f"Renaming: [{song_obj.path.name}] -> [{new_filepath.name}]")
-        #song_obj.path.rename(new_filepath)
+        song_obj.path.rename(new_filepath)
 
 if __name__ == "__main__":
     main()
