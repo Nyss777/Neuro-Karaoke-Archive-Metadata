@@ -1,0 +1,75 @@
+name: Sync Metadata Utils
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: 'Source branch/tag to sync from'
+        required: false
+        default: 'main'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Sync from source repository
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add source repository as remote
+          git remote add source https://github.com/Nyss777/Neuro-Karaoke-Code.git
+          
+          # Fetch with sparse checkout
+          git fetch source ${{ github.event.inputs.source_ref }} --depth=1
+          
+          # Read the sparse checkout files
+          git config core.sparseCheckout true
+          echo "Metadata_Utils/src/metadata_utils" >> .git/info/sparse-checkout
+          
+          # Checkout the sparse content
+          git checkout FETCH_HEAD -- Metadata_Utils/src/metadata_utils
+          
+          # Copy to target location
+          rm -rf lib/metadata_utils
+          mkdir -p lib
+          cp -r Metadata_Utils/src/metadata_utils lib/metadata_utils
+          
+          # Clean up source files
+          rm -rf Metadata_Utils
+      
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+#     - name: Commit and push changes
+#       if: steps.changes.outputs.has_changes == 'true'
+#       run: |
+#         git add lib/metadata_utils
+#         git commit -m "chore: sync metadata_utils from source repository"
+#         git push origin ${{ github.ref_name }}
+     
+      - name: Create pull request (optional)
+        if: steps.changes.outputs.has_changes == 'true' && github.ref_name != 'main'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: sync metadata_utils from source repository"
+          title: "chore: sync metadata_utils"
+          body: "Automated sync of metadata_utils from source repository"
+          branch: sync/metadata-utils
+
