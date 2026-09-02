@@ -51,11 +51,7 @@ def main():
             print(e)
             continue
         
-        metadata = get_metadata(song_obj.path)
-        if not metadata:
-            continue
-
-        song_obj.load_hjson(metadata)
+        song_obj.load_hjson(song_obj.path)
 
         new_stem = song_obj.filename[:-4] # remove the suffix
         new_filepath = song_obj.path.with_stem(new_stem)
