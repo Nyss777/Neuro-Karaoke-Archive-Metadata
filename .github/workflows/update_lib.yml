@@ -1,0 +1,44 @@
+name: Sync Metadata Utils
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: 'Source branch/tag to sync from'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
+  pull-requests: write
+      
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync files from source repository
+        run: |
+          git remote add source https://github.com/Nyss777/Neuro-Karaoke-Code.git
+          git fetch source ${{ github.event.inputs.source_ref || 'main' }} --depth=1
+          
+          # Checkout from the correct source path
+          git checkout source/${{ github.event.inputs.source_ref || 'main' }} -- Metadata_Utils/src/metadata_utils
+          
+          # Remove old metadata_utils and copy the new one
+          rm -rf lib/metadata_utils
+          mkdir -p lib
+          cp -r Metadata_Utils/src/metadata_utils lib/metadata_utils
+          
+          # Clean up source directory
+          git rm -rf Metadata_Utils
+                
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/metadata_utils
+          git commit -m "chore: sync metadata_utils" || echo "No changes"
+          git push

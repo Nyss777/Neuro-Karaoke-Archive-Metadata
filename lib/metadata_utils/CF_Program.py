@@ -4,6 +4,7 @@ import os
 import re
 import unicodedata
 from pathlib import Path
+from typing import cast
 
 import hjson
 import xxhash
@@ -34,12 +35,19 @@ from .embed_lyrics import (
 
 logger = logging.getLogger(__name__)
 
+SCRIPT_FOLDER = Path(__file__).parent.parent.parent 
+
 try:
-    with open( Path(__file__).parent.parent.parent / "config.txt" ) as f:
-        ALBUMS_COVER_PATH = Path(f.read())
+    with open(SCRIPT_FOLDER / "config.json") as f:
+        CONFIGS = json.load(f)
+
 except Exception:
-    logger.error("Failed to load album cover config")
-    ALBUMS_COVER_PATH = None
+    logger.exception("Failed to load album cover config")
+    ALBUMS_COVER_PATH = None    
+
+else:
+    ALBUMS_COVER_PATH = Path(CONFIGS["ALBUMS_COVER_PATH"])
+
 
 ALBUM_COVERS = {
     "1": 'Disc 1 cover art by paccha.jpg',  
@@ -50,9 +58,23 @@ ALBUM_COVERS = {
     "6": 'Disc 6 cover art by koilccc.jpg',
     "7": 'Disc 7 cover art by nostyx.jpg',
     "8": 'Disc 8 cover art by lukuwo.jpg',
+    "9": 'Disc 9 cover art by lingyouzzz.jpg',
     # "66": 'Disc 66 cover art by tanhuluu.jpg',
     "天天天国地獄国": 'Tententengoku Jigokukoku cover art by copper1ion.jpg',
 }
+
+DISC_NAMES = {
+    "1": 'Humble Beginnings',    
+    "2": 'A Small Upgrade',    
+    "3": 'The Gold Standard',    
+    "4": 'First Anniversary',   
+    "5": 'Non-Stop Innovation',
+    "6": 'Second Anniversary',
+    "7": 'Background Running Process',
+    "8": 'Third Anniversary',
+    "9": 'Regularly Scheduled Program'
+}
+
 
 class Song:
     
@@ -70,13 +92,42 @@ class Song:
     Special: str = ''
     xxHash: str = ''
 
+    FIELDS = (
+            "Date", 
+            "Title", 
+            "TitleOG",
+            "Identify",
+            "Artist",
+            "ArtistOG", 
+            "CoverArtist", 
+            "Version", 
+            "Discnumber", 
+            "Track", 
+            "Comment",
+            "Special",
+            "xxHash"
+            )
+
+    def __init__(self, path: Path | str, allow_incompatible : bool = False, allow_fake_path: bool = False):
+        self.path = Path(path)
+
+        if not allow_fake_path and (not self.path.exists() or self.path.is_dir()):
+            raise ValueError("The specified path is invalid!",
+                            f"Invalid path: {self.path}")
+
+        if not allow_incompatible and self.path.suffix != ".mp3":
+            raise ValueError("Incompatible format, only compatible with mp3s!",
+                            f"Invalid path: {self.path}")
+
+        self.load()
+
     def __repr__(self) -> str:
         return self.filename
 
     def __eq__(self, other: object, /) -> bool:
         if not isinstance(other, Song):
             return False
-        return self.filename + self.xxHash == other.filename + self.xxHash
+        return self.filename + self.xxHash == other.filename + other.xxHash
 
     def __hash__(self) -> int:
         return hash(self.filename + self.xxHash)
@@ -128,17 +179,7 @@ class Song:
 
     @property
     def TALB(self) -> str:
-        Discs = {
-            "1": 'Humble Beginnings',    
-            "2": 'A Small Upgrade',    
-            "3": 'The Gold Standard',    
-            "4": 'First Anniversary',   
-            "5": 'Non-Stop Innovation',
-            "6": 'Second Anniversary',
-            "7": 'Background Running Process',
-            "8": 'Third Anniversary',
-        }
-        return f"{Discs.get(self.Discnumber, "INVALID ALBUM NUMBER").upper()}: Neuro-Sama Karaoke Vol. {self.Discnumber}"
+        return f"{DISC_NAMES.get(self.Discnumber, "INVALID ALBUM NUMBER").upper()}: Neuro-Sama Karaoke Vol. {self.Discnumber}"
 
     @property
     def TDRC(self) -> str:
@@ -170,36 +211,23 @@ class Song:
     def TRCK(self) -> str:
         return self.Track
 
-    FIELDS = (
-            "Date", 
-            "Title", 
-            "TitleOG",
-            "Identify",
-            "Artist",
-            "ArtistOG", 
-            "CoverArtist", 
-            "Version", 
-            "Discnumber", 
-            "Track", 
-            "Comment",
-            "Special",
-            "xxHash"
-            )
+    @property
+    def Track_Info(self) -> tuple[str, str|None]:
+        track_n, total = "0", None
 
-    def __init__(self, path: Path | str, allow_incompatible : bool = False):
-        self.path = Path(path)
+        print(self.Track)
+        if '/' in self.Track:
+            track_n, total = self.Track.split('/')
+        else:
+            track_n = self.Track
 
-        if not self.path.exists() or self.path.is_dir():
-            raise ValueError("The specified path is invalid!",
-                            f"Invalid path: {self.path}")
-
-        if not allow_incompatible and self.path.suffix != ".mp3":
-            raise ValueError("Incompatible format, only compatible with mp3s!",
-                            f"Invalid path: {self.path}")
-
-        self.load()
+        return track_n, total
 
     def load(self) -> None:
+        if self.path.suffix == ".hjson":
+            self.load_hjson(self.path)
+            return
+
         payload = self._get_raw_json()
         if not payload:
             return
@@ -211,7 +239,17 @@ class Song:
         self.set_tags()
         self.rename()
 
-    def load_hjson(self, hjson_data: dict[str, (str | int | float)]) -> None:
+    def load_hjson(self, hjson_path: Path):
+        try:
+            with open(hjson_path, encoding="utf-8") as f:
+                content = f.read()
+            metadata = cast(dict[str, str|int|float], hjson.loads(content))
+            self.load_hjson_payload(metadata)
+
+        except Exception:
+            logger.exception(f"Unable to process metadata for {hjson_path}.")
+
+    def load_hjson_payload(self, hjson_data: dict[str, (str | int | float)]) -> None:
 
         data = {
         field: str(hjson_data.get(field)) for field in self.FIELDS
@@ -223,17 +261,14 @@ class Song:
 
         for field in self.FIELDS:
             if field in d:
-                # print(f"{field} - {d[field]}")
                 if d[field] == "None":
+                    setattr(self, field, "") # removes bad fields
                     continue
 
                 setattr(self, field, d[field])
 
         if self.Special == "":
             self.Special = "0"
-
-            # else:            
-            #     print(f"Missing key: {field} - {self.filename}")
 
     def get_raw(self, key: str) -> str:
 
@@ -252,12 +287,13 @@ class Song:
 
         """Return raw JSON string or an empty string."""
 
-        path = Path(self.path)
-
         try:
-            tags = TinyTag.get(path, tags=True, image=False)
+            tags = TinyTag.get(self.path, tags=True, image=False)
 
         except UnsupportedFormatError:
+            return ""
+
+        except FileNotFoundError:
             return ""
 
         texts = tags.other.get("comment") or []
@@ -265,7 +301,7 @@ class Song:
             texts.append(tags.comment)
 
         if not texts:
-            print("No comments found")
+            logger.debug("No comments found in tags.")
             return ""
         
         for text in texts:
@@ -322,7 +358,7 @@ class Song:
     def set_image(self, image_path: Path):
 
         if not (image_path.exists() and image_path.is_file()):
-            print("Please select a valid image!")
+            logger.error(f"Invalid image selected. ({image_path})")
             return
 
         image_data = image_path.read_bytes()
@@ -362,7 +398,6 @@ class Song:
 
         self.set_image(ALBUMS_COVER_PATH / cover_image)
 
-
     def rename(self) -> None:
         new_path = self.path.with_name(self.filename)
 
@@ -370,30 +405,24 @@ class Song:
             return
 
         if new_path.exists() and new_path.is_file():
-            raise FileExistsError(f"{new_path} already exists!")
+            raise FileExistsError(f"{new_path} already exists!\nself-path: {self.path}")
         else:
-            try:
-                os.rename(self.path, new_path)
-
-            except Exception:
-                raise
-
-            else:
-                self.path = new_path
+            os.rename(self.path, new_path)
+            self.path = new_path
 
     def get_hash(self) -> str | None:
         try:
             file_size = self.path.stat().st_size
             if file_size < 3000:
-                print(f"{self.path.name} is too small!")
+                logger.error(f"{self.path.name} is too small!")
                 return None
 
             with open(self.path, 'rb') as f:
                 xxhash = get_audio_hash(f.read(), file_size)
                 return xxhash
                 
-        except Exception as e:
-            print(f"Error processing {self.path}: {e}")
+        except Exception:
+            logger.exception("Error")
             return None
 
     def make_hjson(self, output_folder: Path | str):
@@ -401,14 +430,13 @@ class Song:
         output_folder = Path(output_folder)
 
         if not (output_folder.exists() and output_folder.is_dir()):
-            print("Please Pass a Valid Folder!",
-                 f"Invalid Folder: {output_folder}")
+            logger.error(f"Invalid Folder: {output_folder}")
             return
 
         song_data = {field: value for field in self.FIELDS if (value := getattr(self, field))}
 
         if not song_data:
-            print("No data found")
+            logger.warning("No data found")
             return
 
         filename = self.filename.replace(".mp3", ".hjson")
@@ -429,10 +457,13 @@ class Song:
         if song_data["Special"] == 0:
             del song_data["Special"]
 
+        if "Comment" in song_data and song_data["Comment"] == "None":
+            del song_data["Comment"]
+
         os.makedirs(output_location.parent, exist_ok=True)
         with open(output_location, 'w', encoding='utf-8') as f:
             hjson.dump(song_data, f)
-            print(f"hjons made in {output_location}")
+            logger.info(f"hjons made in {output_location}")
 
     def print_tags(self):
 
@@ -480,8 +511,6 @@ class Song:
             text=sylt_data
         ))
         
-        # print(sylt_data)
-
         tags.save()
         logger.debug(f"Successfully embedded synced lyrics into {self.path}")
 
@@ -505,7 +534,7 @@ def sanitize_filename(filename: str) -> str:
         '|': '_'
     }
 
-    for char in FORBIDDEN_CHARS:
+    for char in FORBIDDEN_CHARS:  # noqa: PLC0206
         filename = filename.replace(char, FORBIDDEN_CHARS[char])
 
     while("  " in filename):
@@ -538,5 +567,5 @@ def get_audio_hash(file: bytes, file_size: int) -> (str | None):
         return xxhash.xxh64(raw_audio).hexdigest()
 
     except Exception:
-        logging.exception
+        logger.exception("Error")
         return None

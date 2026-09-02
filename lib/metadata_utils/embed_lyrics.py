@@ -27,27 +27,20 @@ def convert_time_to_ms(time_str: str) -> int | None:
     if ':' not in time_str:
         return
     
-    try:
-        column_split = time_str.split(':')
+    column_split = time_str.split(':')
 
-        if (lenght_split := len(column_split)) == 2:
-            m, s = column_split
-            total_ms = int((float(m) * 60 + float(s)) * 1000)
+    if (lenght_split := len(column_split)) == 2:
+        m, s = column_split
+        total_ms = int((float(m) * 60 + float(s)) * 1000)
 
-        elif lenght_split == 3:
-            m, s, ms = column_split
-            total_ms = (int(m) * 60 + int(s)) * 1000 + int(ms)
+    elif lenght_split == 3:
+        m, s, ms = column_split
+        total_ms = (int(m) * 60 + int(s)) * 1000 + int(ms)
 
-        else:
-            return
+    else:
+        return
 
-        return total_ms
-
-    except Exception as e:
-        print(time_str.split(':'))
-        print(e)
-
-    return  
+    return total_ms
 
 def convert_lyric_simple(lyrics: str) -> list[tuple[str, int]]:
 
