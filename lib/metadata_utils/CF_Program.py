@@ -215,7 +215,6 @@ class Song:
     def Track_Info(self) -> tuple[str, str|None]:
         track_n, total = "0", None
 
-        print(self.Track)
         if '/' in self.Track:
             track_n, total = self.Track.split('/')
         else:
