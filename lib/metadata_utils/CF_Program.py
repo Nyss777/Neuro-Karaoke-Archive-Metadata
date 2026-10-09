@@ -146,6 +146,9 @@ class Song:
         if '&' not in self.CoverArtist:
             filename += f"({self.CoverArtist}.v{self.Version})"
 
+        elif self.CoverArtist.count('&') == 2:
+            filename += f"(Trio.v{self.Version}) ({self.CoverArtist})"
+
         else:
             filename += f"(Duet.v{self.Version}) ({self.CoverArtist})"
             
@@ -174,6 +177,10 @@ class Song:
 
         if '&' not in self.CoverArtist:
             return  f"{self.CoverArtist} - {artist}"
+
+        elif self.CoverArtist.count('&') == 2:
+            return f"Trio ({self.CoverArtist}) - {artist}"
+
         else:
             return f"Duet ({self.CoverArtist}) - {artist}"
 
